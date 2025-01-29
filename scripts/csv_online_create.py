@@ -12,8 +12,6 @@ class Converter(Node):
 
         self.csv_file = open('shihou_gnssnav.csv', mode='w', newline='')
         self.csv_writer = csv.writer(self.csv_file)
-        self.csv_writer.writerow(['Latitude', 'Longitude'])
-
         self.counter = 0  # カウンタを初期化
 
     def callback(self, msg):
