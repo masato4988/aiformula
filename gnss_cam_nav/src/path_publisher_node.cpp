@@ -98,6 +98,7 @@ std::vector<Eigen::Vector2d> Publisher::interpolateSpline(const std::vector<doub
 
     auto spline = Eigen::SplineFitting<Eigen::Spline<double, 2>>::Interpolate(points.transpose(), 2); //2次のキュービックスプライン
 
+    std::vector<Eigen::Vector2d> result_;
     if(num_points > 1)
         step = 1.0 / (num_points -1);
     for (int i = 0; i < num_points; ++i) {

@@ -106,7 +106,7 @@ void Follower::imageCallback(const sensor_msgs::msg::Image::SharedPtr img){
         cv::minEnclosingCircle(largest_contour, center, radius);
 
         // 画面の中央に近いか判定
-        int threshold = frame.cols / 5; // パーセンテージ
+        int threshold = frame.cols / 10; // パーセンテージ
         if (std::abs(center.x - img_center_x) < threshold) {
             is_centered = true;
         }

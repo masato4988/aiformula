@@ -54,7 +54,6 @@ private:
 
     std::pair<double, double> convertGPStoUTM(double lat, double lon);
     std::vector<Eigen::Vector2d> interpolateSpline(const std::vector<double>& xs, const std::vector<double>& ys, int num_points);
-    std::vector<Eigen::Vector2d> result_;
 
     nav_msgs::msg::Path setMsg(const std::vector<double>& xs, const std::vector<double>& ys);
 
