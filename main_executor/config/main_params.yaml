@@ -1,8 +1,9 @@
 launch: #起動パラメータ
   ros__parameters:
-    can: true
-    joy: true
+    can: false
+    joy: false
     vectornav : false
+    zed : false
     log_level : 10
 
 /**:  #ワイルドカード(ここのパラメータは全ノードから読める: <名前に注意>)
@@ -21,7 +22,7 @@ launch: #起動パラメータ
     tread : 0.6
     wheelbase : 0.65
 
-    autonomous_flag : false
+    autonomous_flag : true
 
 socketcan_interface_node:
   ros__parameters:
@@ -59,7 +60,8 @@ cybergear_interface_node:
 path_publisher_node:
   ros__parameters:
     interval_ms : 1000
-    path_file_name : "shihou_241030_dynamic"
+    first_path_file_name : "pre_line"
+    second_path_file_name : "pre_line"
 
 gnssnav_follower_node:
   ros__parameters:
