@@ -65,7 +65,7 @@ private:
 
     std::vector<geometry_msgs::msg::PoseStamped> first_point_;
     std::vector<geometry_msgs::msg::PoseStamped> second_point_;
-    std::vector<geometry_msgs::msg::PoseStamped> &point_ = first_point_;
+    std::vector<geometry_msgs::msg::PoseStamped> *point_ = &first_point_;
 
     void vectornavCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
     void firstPathCallback(const nav_msgs::msg::Path::SharedPtr msg) {

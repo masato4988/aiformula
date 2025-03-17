@@ -75,8 +75,8 @@ void Follower::imageCallback(const sensor_msgs::msg::Image::SharedPtr img){
     cv::bitwise_or(mask1, mask2, mask); // 2つの赤色マスクを結合
 
     // ノイズ除去
-    cv::erode(mask, mask, cv::Mat(), cv::Point(-1,-1), 2);
-    cv::dilate(mask, mask, cv::Mat(), cv::Point(-1,-1), 2);
+    // cv::erode(mask, mask, cv::Mat(), cv::Point(-1,-1), 2);
+    // cv::dilate(mask, mask, cv::Mat(), cv::Point(-1,-1), 2);
 
     // 輪郭を検出
     std::vector<std::vector<cv::Point>> contours;
@@ -106,7 +106,7 @@ void Follower::imageCallback(const sensor_msgs::msg::Image::SharedPtr img){
         cv::minEnclosingCircle(largest_contour, center, radius);
 
         // 画面の中央に近いか判定
-        int threshold = frame.cols / 10; // 画面幅の10%以内を中央寄りとする
+        int threshold = frame.cols / 5; // パーセンテージ
         if (std::abs(center.x - img_center_x) < threshold) {
             is_centered = true;
         }
@@ -120,17 +120,18 @@ void Follower::imageCallback(const sensor_msgs::msg::Image::SharedPtr img){
     // 結果をログ出力
     if (!largest_contour.empty()) {
         if(is_centered){
-            point_ = second_point_;
+            point_ = &second_point_;
             is_second_runnig = true;
+            RCLCPP_INFO(this->get_logger(), "is second : %d", is_second_runnig);
         }
-        RCLCPP_INFO(this->get_logger(), "Red object detected: Center=(%.2f, %.2f), Centered=%s",
-                    center.x, center.y, is_centered ? "true" : "false");
+        // RCLCPP_INFO(this->get_logger(), "Red object detected: Center=(%.2f, %.2f), Centered=%s", center.x, center.y, is_centered ? "true" : "false");
     } else {
         if(is_second_runnig){
-            point_ = first_point_;
+            point_ = &first_point_;
             is_second_runnig = false;
+            RCLCPP_INFO(this->get_logger(), "is second : %d", is_second_runnig);
         }
-        RCLCPP_INFO(this->get_logger(), "No red object detected.");
+        // RCLCPP_INFO(this->get_logger(), "No red object detected.");
     }
 
 
@@ -142,7 +143,7 @@ void Follower::imageCallback(const sensor_msgs::msg::Image::SharedPtr img){
 
 // vectornav/pose callback
 void Follower::vectornavCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
-    if(point_.empty())
+    if(point_->empty())
         return;
 
     auto [x, y] = convertECEFtoUTM(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
@@ -187,15 +188,15 @@ void Follower::setBasePose(){
     std::cerr << "set Base Pose" << std::endl;
     init_base_flag_ = true;
 
-     for(const auto &pose : point_){
+     for(const auto &pose : *point_){
             RCLCPP_INFO_EXPRESSION(this->get_logger(), is_debug, "path_x:%f , path_y:%f", pose.pose.position.x, pose.pose.position.y);
     }
 }
 
 // 現在地をパブリッシュ
 void Follower::publishCurrentPose(){
-    double dx = point_[1].pose.position.x - point_[0].pose.position.x;
-    double dy = point_[1].pose.position.y - point_[0].pose.position.y;
+    double dx = (*point_)[1].pose.position.x - (*point_)[0].pose.position.x;
+    double dy = (*point_)[1].pose.position.y - (*point_)[0].pose.position.y;
     double path_direction_ = std::atan2(dy, dx);
 
     geometry_msgs::msg::PoseStamped pose_msg;
@@ -230,8 +231,8 @@ void Follower::publishLookahead(){
     pose_msg.header.stamp = this->now();
     pose_msg.header.frame_id = "map";
 
-    pose_msg.pose.position.x = point_[idx_].pose.position.x - vectornav_base_x_;
-    pose_msg.pose.position.y = point_[idx_].pose.position.y - vectornav_base_y_;
+    pose_msg.pose.position.x = (*point_)[idx_].pose.position.x - vectornav_base_x_;
+    pose_msg.pose.position.y = (*point_)[idx_].pose.position.y - vectornav_base_y_;
     pose_msg.pose.position.z = 0.0;
 
     current_ld_pub_->publish(pose_msg);
@@ -241,12 +242,12 @@ void Follower::publishLookahead(){
 double Follower::findLookaheadDistance(){
     double ld_ = ld_gain_ * v_ + ld_min_;
 
-    for(idx_ = pre_point_idx;idx_ < point_.size(); idx_++){
-        double dx = point_[idx_].pose.position.x - current_position_x_;
-        double dy = point_[idx_].pose.position.y - current_position_y_;
+    for(idx_ = pre_point_idx;idx_ < point_->size(); idx_++){
+        double dx = (*point_)[idx_].pose.position.x - current_position_x_;
+        double dy = (*point_)[idx_].pose.position.y - current_position_y_;
         double distance_ = std::hypot(dx, dy);
 
-        if(distance_ > ld_ && idx_ > pre_point_idx && point_[idx_].pose.position.x > 30000){
+        if(distance_ > ld_ && idx_ > pre_point_idx && (*point_)[idx_].pose.position.x > 30000){
 		    pre_point_idx = idx_ - 1;
             return distance_;
         }
@@ -286,8 +287,8 @@ double Follower::findLookaheadDistance(){
 // }
 
 double Follower::calculateCrossError(){
-    double dx = point_[idx_].pose.position.x - current_position_x_;
-    double dy = point_[idx_].pose.position.y - current_position_y_;
+    double dx = (*point_)[idx_].pose.position.x - current_position_x_;
+    double dy = (*point_)[idx_].pose.position.y - current_position_y_;
 
     double target_angle = std::atan2(dy, dx);
 
@@ -302,7 +303,7 @@ double Follower::calculateCrossError(){
 }
 
 void Follower::followPath(){
-    if(point_.empty() || !autonomous_flag_) return;
+    if(point_->empty() || !autonomous_flag_) return;
 
     double distance = findLookaheadDistance();
     publishLookahead();
@@ -319,7 +320,7 @@ void Follower::followPath(){
     cmd_vel.angular.z = constrain(w_, -w_max_, w_max_);
 
     // 完走した判定
-    if(idx_ >= point_.size()){
+    if(idx_ >= point_->size()){
         if(laps == 0){
             cmd_vel.linear.x = 0.0;
             cmd_vel.angular.z = 0.0;

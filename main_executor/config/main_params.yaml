@@ -1,16 +1,16 @@
 launch: #起動パラメータ
   ros__parameters:
-    can: false
-    joy: false
-    vectornav : false
-    zed : false
+    can: true
+    joy: true
+    vectornav : true
+    zed : true
     log_level : 10
 
 /**:  #ワイルドカード(ここのパラメータは全ノードから読める: <名前に注意>)
   ros__parameters:
     # 並進  速度[m/s],加速度[m/s^2],加減速度[-m/s^2],躍度[m/s^3]
     linear_max:
-      vel : 2.5
+      vel : 1.5
       acc: 3.5
       jer: 0.0
     # 回転  速度[deg/s],加速度[deg/s^2],加減速度[-deg/s^2],躍度[deg/s^3]
@@ -22,7 +22,7 @@ launch: #起動パラメータ
     tread : 0.6
     wheelbase : 0.65
 
-    autonomous_flag : true
+    autonomous_flag : false
 
 socketcan_interface_node:
   ros__parameters:
@@ -60,8 +60,8 @@ cybergear_interface_node:
 path_publisher_node:
   ros__parameters:
     interval_ms : 1000
-    first_path_file_name : "pre_line"
-    second_path_file_name : "pre_line"
+    first_path_file_name : "lane_out_course"
+    second_path_file_name : "lane_in_course"
 
 gnssnav_follower_node:
   ros__parameters:
